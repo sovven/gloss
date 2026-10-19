@@ -8,7 +8,7 @@
 
 一个开源、免费、无需注册的 Chrome 双语翻译插件
 
-[![Version](https://img.shields.io/badge/version-2.2.1-10b981?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.3.0-10b981?style=flat-square)](CHANGELOG.md)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
 [![License: MIT](https://img.shields.io/badge/license-MIT-18181b?style=flat-square)](LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-10b981?style=flat-square)](#-项目结构)
@@ -46,6 +46,9 @@
 
 </td>
 <td width="50%" valign="top">
+
+**🧹 只翻译正文**
+导航、菜单、频道名、短链接、#话题标签都保持原样，页面干净好读；YouTube 有专门优化。
 
 **⚡ 快而省**
 只翻译屏幕附近的内容，多段合并成一次请求，翻过的句子有缓存。
@@ -212,7 +215,14 @@ flowchart LR
 
 <br />
 
-下面这些内容会被故意跳过：已经是目标语言的段落、代码块、输入框，以及网页标记了 `translate="no"` 或 `notranslate` 的部分。
+下面这些内容会被故意跳过，让页面更好读：
+
+- 导航栏、菜单、工具栏、标签页
+- 短链接和短按钮（人名、频道名、菜单项）、#话题标签、@提及、KR 这类代码
+- 已经是目标语言的段落、代码块、输入框
+- 网页标记了 `translate="no"` 或 `notranslate` 的部分
+
+想看某一段的译文，**鼠标停上去单独按一下 <kbd>Ctrl</kbd>** 就能单独翻译。
 
 </details>
 

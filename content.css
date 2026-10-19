@@ -87,3 +87,10 @@ font.hc-imm-trans.hc-imm-error {
 font.hc-imm-trans.hc-imm-error:hover {
   background: rgba(239, 68, 68, 0.16) !important;
 }
+
+/* 解除“最多显示 N 行”的限制，让译文完整显示（YouTube 标题、卡片摘要等） */
+.hc-imm-unclamp {
+  -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
+  max-height: none !important;
+}

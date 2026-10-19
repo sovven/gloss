@@ -55,7 +55,7 @@
     else if (t === "ko") re = /[가-힯]/g;
     if (!re) return false;
     if (t.startsWith("zh") && /[぀-ヿ]/.test(letters)) return false; // 日文含汉字，不能当中文
-    return (letters.match(re) || []).length / letters.length > 0.5;
+    return (letters.match(re) || []).length / letters.length > (t.startsWith("zh") ? 0.3 : 0.5);
   }
 
   // ---------- 段落识别 ----------
@@ -70,6 +70,29 @@
   const SKIP_ATTR =
     ".notranslate,[translate='no'],[contenteditable=''],[contenteditable='true'],[contenteditable='plaintext-only']";
   const OWN_SEL = `font.${TRANS},hc-translator-ui`;
+
+  // 界面元素（导航、菜单、工具栏、标签页）不是要读的内容，默认不翻译；悬停按 Ctrl 仍可单独翻译
+  const UI_SEL = "nav,[role=navigation],[role=menu],[role=menubar],[role=toolbar],[role=tablist],[role=tab],[role=search]";
+
+  // 个别网站的专门规则：skip = 不翻译的区域；content = 一定要翻译的正文（不受“短链接不翻译”限制）
+  const SITE_RULES = [
+    {
+      host: /(^|\.)youtube\.com$/,
+      skip:
+        "#masthead-container,#guide,ytd-mini-guide-renderer,ytd-channel-name,#channel-info,#byline-container," +
+        "#metadata-line,ytd-video-meta-block,yt-chip-cloud-renderer,ytd-feed-filter-chip-bar-renderer," +
+        "ytd-badge-supported-renderer,ytd-thumbnail,ytd-thumbnail-overlay-time-status-renderer," +
+        "ytd-expandable-metadata-renderer,ytd-menu-renderer,#subscribe-button,ytd-video-owner-renderer," +
+        "#owner,#header-author,tp-yt-paper-tooltip,ytd-search-filter-renderer,yt-formatted-string#count," +
+        "yt-content-metadata-view-model,yt-avatar-shape,yt-decorated-avatar-view-model,#movie_player,#player-ads," +
+        "ytd-ad-slot-renderer,ytd-in-feed-ad-layout-renderer,ytd-promoted-sparkles-web-renderer,ytd-player-legacy-desktop-watch-ads-renderer",
+      content:
+        "#video-title,#content-text,#description-text,.metadata-snippet-text,#title h1,#description," +
+        ".yt-lockup-metadata-view-model__title,.yt-lockup-metadata-view-model__heading-reset",
+    },
+  ];
+  const site = SITE_RULES.find((r) => r.host.test(location.hostname)) || {};
+  const SKIP_SEL = site.skip ? `${UI_SEL},${site.skip}` : UI_SEL;
 
   const isOwn = (el) => el.matches(OWN_SEL);
   const displayOf = (el) => getComputedStyle(el).display;
@@ -94,7 +117,22 @@
 
   let processed = new WeakSet(); // 已经属于某个段落的节点
 
-  function makeUnit(container, nodes) {
+  // 短链接、短按钮多半是人名、频道名、菜单项，翻译了反而添乱
+  const LINK_SEL = "a,button,label,[role=link],[role=button],[role=option],[role=menuitem]";
+  function isShortLabel(text, nodes, container) {
+    const el = nodes.find((n) => n.nodeType === 1) || container;
+    if (site.content && el.closest(site.content)) return false;
+    const short = /\s/.test(text) ? text.split(/\s+/).length <= 3 && text.length <= 30 : text.length <= 12;
+    if (!short) return false;
+    if (el.closest(LINK_SEL)) return true;
+    // 只包着链接的元素，比如列表项 <li><a>drums</a></li>
+    const links = nodes.flatMap((n) => (n.nodeType === 1 ? [...n.querySelectorAll(LINK_SEL)] : []));
+    const linkText = links.map((a) => a.textContent).join("").replace(/\s+/g, "");
+    return linkText.length > 0 && linkText === text.replace(/\s+/g, "");
+  }
+
+  // force = 用户主动要求翻译（悬停按 Ctrl），跳过“看起来不像正文”的过滤
+  function makeUnit(container, nodes, force = false) {
     const blank = (n) => (n.nodeType === 3 ? !n.nodeValue.trim() : n.localName === "br");
     let a = 0;
     let b = nodes.length - 1;
@@ -113,10 +151,17 @@
     if (text.length < 2 || text.length > 5000) return null;
     if (!/\p{L}/u.test(text) || alreadyTarget(text)) return null;
     if (/^(https?:\/\/|www\.)\S+$/i.test(text) || /^\S+@\S+\.\S+$/.test(text)) return null;
+    if (!force) {
+      if (/^[A-Z0-9]{1,4}$/.test(text)) return null; // KR、VIP、HD 这类代码
+      if (/^[#@]\S+$/.test(text)) return null; // 话题标签 #爵士、@提及
+      if (isShortLabel(text, nodes, container)) return null;
+      const w = container.getBoundingClientRect().width;
+      if (w > 0 && w < 80) return null; // 太窄的位置放不下译文，会被挤成竖排
+    }
     return { container, nodes, text, font: null, hidden: false, backup: null };
   }
 
-  function scan(container, out) {
+  function scan(container, out, force = false) {
     let run = [];
     const flush = () => {
       if (run.length) {
@@ -125,7 +170,7 @@
         const looseText = run.some((n) => n.nodeType === 3 && n.nodeValue.trim());
         const groups = els.length >= 2 && !looseText ? els.map((n) => [n]) : [run];
         for (const g of groups) {
-          const u = makeUnit(container, g);
+          const u = makeUnit(container, g, force);
           if (u) out.push(u);
         }
       }
@@ -138,17 +183,21 @@
       }
       if (n.nodeType !== 1 || isOwn(n)) continue;
       const tag = n.localName;
+      if (!force && n.matches(SKIP_SEL)) {
+        flush(); // 界面元素：整块跳过
+        continue;
+      }
       const skip = SKIP_TAGS.has(tag) || n.matches(SKIP_ATTR);
       const d = displayOf(n);
       if (d === "none") {
         // 隐藏的内容（折叠面板、下拉菜单）也拆好段落，等它显示出来时 IntersectionObserver 会触发翻译
         flush();
-        if (!skip && !BLOCK_SKIP.has(tag)) scan(n, out);
+        if (!skip && !BLOCK_SKIP.has(tag)) scan(n, out, force);
       } else if (isInlineLevel(n, d)) {
         run.push(n);
       } else {
         flush();
-        if (!skip && !BLOCK_SKIP.has(tag)) scan(n, out);
+        if (!skip && !BLOCK_SKIP.has(tag)) scan(n, out, force);
       }
     }
     flush();
@@ -173,7 +222,10 @@
 
   function register(list) {
     for (const u of list) {
-      u.nodes.forEach((n) => processed.add(n));
+      u.nodes.forEach((n) => {
+        processed.add(n);
+        unitByNode.set(n, u);
+      });
       units.add(u);
       if (!io) continue;
       const anchor = u.nodes.find((n) => n.nodeType === 1 && n.localName !== "br") || u.container;
@@ -230,6 +282,17 @@
     u.font.classList.remove("hc-imm-loading");
     u.font.textContent = r.text;
     applyMode(u);
+    unclamp(u.font);
+  }
+
+  // 很多网站（YouTube 标题、卡片摘要）限制文字最多显示 2 行，加在下面的译文会被裁掉：解除这个限制
+  function unclamp(font) {
+    let el = font.parentElement;
+    for (let i = 0; el && el !== document.body && i < 4; i++, el = el.parentElement) {
+      const cs = getComputedStyle(el);
+      const clamped = cs.webkitLineClamp !== "none" || (cs.maxHeight !== "none" && cs.overflowY === "hidden");
+      if (clamped && el.scrollHeight > el.clientHeight + 1) el.classList.add("hc-imm-unclamp");
+    }
   }
 
   function fail(u, e) {
@@ -247,13 +310,15 @@
     };
   }
 
+  const selfSet = new WeakMap(); // 插件自己改过的文字节点 → 改成的值
+
   // 仅译文模式：把原文清空/隐藏，切回双语时恢复
   function applyMode(u) {
     const ready = u.font instanceof Element && u.font.isConnected && !u.font.matches(".hc-imm-loading,.hc-imm-error");
     const only = S.mode === "only" && ready;
     if (only && !u.hidden) {
       u.backup = u.nodes.map((n) => (n.nodeType === 3 ? n.nodeValue : null));
-      u.nodes.forEach((n) => (n.nodeType === 3 ? (n.nodeValue = "") : n.classList.add(HIDE)));
+      u.nodes.forEach((n) => (n.nodeType === 3 ? (selfSet.set(n, ""), (n.nodeValue = "")) : n.classList.add(HIDE)));
       u.hidden = true;
     } else if (!only && u.hidden) {
       restore(u);
@@ -261,7 +326,12 @@
   }
 
   function restore(u) {
-    u.nodes.forEach((n, i) => (n.nodeType === 3 ? (n.nodeValue = u.backup[i]) : n.classList.remove(HIDE)));
+    u.nodes.forEach((n, i) => {
+      if (n.nodeType !== 3) return n.classList.remove(HIDE);
+      if (n.nodeValue !== "") return; // 网页已经换上了新文字，不要覆盖
+      selfSet.set(n, u.backup[i]);
+      n.nodeValue = u.backup[i];
+    });
     u.hidden = false;
   }
 
@@ -303,8 +373,17 @@
     mo = new MutationObserver((muts) => {
       for (const m of muts) {
         if (m.type === "characterData") {
-          if (!processed.has(m.target) && m.target.parentElement) dirty.add(m.target.parentElement);
+          const t = m.target;
+          if (selfSet.has(t) && selfSet.get(t) === t.nodeValue) continue; // 插件自己改的
+          const u = unitByNode.get(t);
+          if (u) removeUnit(u);
+          if (t.parentElement) dirty.add(t.parentElement);
           continue;
+        }
+        for (const n of m.removedNodes) {
+          if (n.nodeType === 1 && isOwn(n)) continue; // 译文本身被移除（多半是插件自己）
+          const u = unitByNode.get(n);
+          if (u) removeUnit(u); // 原文被网页换掉了：旧译文也删掉，新内容会重新翻译
         }
         for (const n of m.addedNodes) {
           if (n.nodeType === 1 && isOwn(n)) continue;
@@ -318,7 +397,7 @@
           const containers = new Set();
           for (const el of dirty) {
             if (!el.isConnected || el.nodeType !== 1) continue;
-            if (el.closest(`${OWN_SEL},${SKIP_ATTR},pre,code,textarea,script,style`)) continue;
+            if (el.closest(`${OWN_SEL},${SKIP_ATTR},${SKIP_SEL},pre,code,textarea,script,style`)) continue;
             containers.add(blockAncestor(el));
           }
           dirty.clear();
@@ -342,6 +421,7 @@
     pending = [];
     [...units].forEach(removeUnit);
     document.querySelectorAll(`font.${TRANS}`).forEach((f) => f.remove());
+    document.querySelectorAll(".hc-imm-unclamp").forEach((el) => el.classList.remove("hc-imm-unclamp"));
     processed = new WeakSet();
   }
 
@@ -382,7 +462,7 @@
     }
     const block = blockAncestor(t);
     const out = [];
-    scan(block, out);
+    scan(block, out, true);
     if (!out.length) {
       const u = [...units].find((x) => x.container === block && x.font instanceof Element);
       if (u) removeUnit(u);

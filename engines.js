@@ -100,12 +100,22 @@ const google = (() => {
     });
   }
 
+  // 批量翻译偶尔会把个别段落输出成英文（比如韩文 → 英文）：译文大多是拉丁字母、原文却不是，就算翻错了
+  const latinRatio = (s) => (s.match(/[A-Za-z]/g) || []).length / ((s.match(/\p{L}/gu) || []).length || 1);
+  const wrongLang = (out, src, tl) => /^(zh|ja|ko)/.test(tl) && latinRatio(out) > 0.5 && latinRatio(src) < 0.3;
+
   async function translate(texts, tl) {
     const results = new Array(texts.length);
     await Promise.all(
       chunk(texts, 50, 4000).map((idx) =>
         limit(() => batch(idx.map((i) => texts[i]), tl)).then((rs) => rs.forEach((r, k) => (results[idx[k]] = r)))
       )
+    );
+    // 翻错语言的段落，单独再翻一次
+    await Promise.all(
+      results.map(async (r, i) => {
+        if (r && wrongLang(r.text, texts[i], tl)) results[i] = await single(texts[i], tl).catch(() => r);
+      })
     );
     return results;
   }
