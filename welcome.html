@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>欢迎使用沉浸式双语翻译</title>
+  <link rel="stylesheet" href="ui.css" />
+  <style>
+    body { background: var(--page); padding: 64px 20px 72px; }
+    main { max-width: 760px; margin: 0 auto; }
+
+    .hero { text-align: center; margin-bottom: 44px; }
+    .hero img { width: 76px; height: 76px; border-radius: 20px; box-shadow: 0 12px 32px -8px rgba(5, 150, 105, 0.35); }
+    .hero h1 { margin: 22px 0 10px; font-size: 32px; font-weight: 750; letter-spacing: -0.03em; }
+    .hero p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.6; }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .step { padding: 22px 20px 20px; display: flex; flex-direction: column; gap: 10px; border-radius: var(--r-xl); }
+    .num { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; font-size: 13px; color: var(--accent-text); background: var(--accent-soft); }
+    .step h3 { margin: 4px 0 0; font-size: 15px; font-weight: 650; }
+    .step p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; flex: 1; }
+    .step .btn { align-self: flex-start; }
+    .keys { display: inline-flex; gap: 3px; vertical-align: -4px; }
+
+    .engine { margin-top: 14px; padding: 20px 22px; display: flex; align-items: center; gap: 20px; border-radius: var(--r-xl); }
+    .engine h3 { margin: 0 0 4px; font-size: 15px; font-weight: 650; }
+    .engine p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .engine .seg { margin-left: auto; flex-shrink: 0; }
+    .engine .seg button { height: 30px; padding: 0 14px; font-size: 13px; }
+    #net { font-weight: 550; }
+    #net.ok { color: var(--accent-text); }
+    #net.warn { color: var(--warn-text); }
+
+    .tips { margin-top: 14px; padding: 18px 22px; border-radius: var(--r-xl); color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .tips b { color: var(--text); font-weight: 600; }
+    .tips a { color: var(--accent-text); }
+
+    footer { margin-top: 32px; text-align: center; color: var(--muted); font-size: 12.5px; }
+    footer a { color: var(--muted); }
+
+    @media (max-width: 680px) {
+      .steps { grid-template-columns: 1fr; }
+      .engine { flex-direction: column; align-items: flex-start; }
+      .engine .seg { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <img src="icons/icon128.png" alt="" />
+    <h1>欢迎使用沉浸式双语翻译</h1>
+    <p>在原文下方显示译文，像读母语一样读外文网页。<br />不用注册，打开网页就能用。</p>
+  </section>
+
+  <section class="steps">
+    <div class="card step">
+      <div class="num">1</div>
+      <h3>把图标固定到工具栏</h3>
+      <p>点浏览器右上角的拼图图标 🧩，找到「沉浸式双语翻译」，点旁边的 📌。以后在工具栏上就能一键打开设置。</p>
+    </div>
+    <div class="card step">
+      <div class="num">2</div>
+      <h3>按 <span class="keys" id="keys"></span> 翻译整页</h3>
+      <p>打开任意外文网页，按快捷键，每段原文下面都会出现译文。再按一次恢复原文。</p>
+      <a class="btn small primary" href="https://en.wikipedia.org/wiki/Bilingual_dictionary" target="_blank">打开英文网页试试 →</a>
+    </div>
+    <div class="card step">
+      <div class="num">3</div>
+      <h3>只翻译一段</h3>
+      <p>不想翻译整页？把鼠标停在段落上，单独按一下 <kbd>Ctrl</kbd>，只翻译这一段。选中文字也能翻译。</p>
+    </div>
+  </section>
+
+  <section class="card engine">
+    <div>
+      <h3>翻译服务</h3>
+      <p><span id="net">正在检测网络…</span></p>
+    </div>
+    <div class="seg" data-key="engine">
+      <button data-v="google">Google</button><button data-v="microsoft">微软</button><button data-v="ai">AI</button>
+    </div>
+  </section>
+
+  <section class="card tips">
+    <b>小提示</b><br />
+    · 装了「沉浸式翻译」等其他翻译插件的话，快捷键可能冲突，可以在 <a href="#" id="shortcuts">快捷键设置</a> 里修改。<br />
+    · 想要更自然的译文，可以在 <a href="#" id="options">AI 设置</a> 里接入 Claude、DeepSeek 等 AI。<br />
+    · 已经打开的网页需要先刷新一次，插件才能生效。
+  </section>
+
+  <footer>开源免费 · 不收集任何数据 · <a href="https://github.com/sovven/immersive-translator" target="_blank">GitHub</a></footer>
+</main>
+<script src="welcome.js"></script>
+</body>
+</html>

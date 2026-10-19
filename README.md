@@ -8,12 +8,12 @@
 
 一个开源、免费、无需注册的 Chrome 双语翻译插件
 
-[![Version](https://img.shields.io/badge/version-2.1.0-10b981?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.2.0-10b981?style=flat-square)](CHANGELOG.md)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
 [![License: MIT](https://img.shields.io/badge/license-MIT-18181b?style=flat-square)](LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-10b981?style=flat-square)](#-项目结构)
 
-[功能](#-功能) · [安装](#-安装) · [使用](#-使用) · [翻译服务](#-翻译服务) · [原理](#-实现原理) · [常见问题](#-常见问题)
+[功能](#-功能) · [安装](#-安装) · [使用](#-使用) · [翻译服务](#-翻译服务) · [原理](#-实现原理) · [常见问题](#-常见问题) · [产品复盘](docs/PRODUCT.md)
 
 <br />
 
@@ -30,16 +30,19 @@
 <td width="50%" valign="top">
 
 **📖 整页双语对照**
-每段原文下方显示译文，标题、列表、引用、导航都能识别。按 <kbd>Alt</kbd> + <kbd>A</kbd> 一键切换。
+每段原文下方显示译文，标题、列表、引用、导航都能识别。按 <kbd>Alt</kbd> + <kbd>Q</kbd> 一键切换。
 
 **🎯 只翻译一段**
 鼠标停在段落上，单独按一下 <kbd>Ctrl</kbd>，只翻这一段；再按一次取消。
 
 **✂️ 划词翻译**
-选中文字，点出现的「译」按钮，弹出翻译气泡，可以一键复制。
+选中文字，点出现的小按钮，弹出翻译卡片，显示原文语言，可以一键复制。
 
 **🔁 仅译文模式**
 不需要对照时，译文直接替换原文的位置。
+
+**🧭 一分钟上手**
+安装后自动打开欢迎页，3 步教会你怎么用。
 
 </td>
 <td width="50%" valign="top">
@@ -51,10 +54,13 @@
 无限滚动、单页应用、展开的折叠内容，新出现的文字也会自动翻译。
 
 **🤖 三种翻译服务**
-Google、微软免费可用；也可以接入 Claude、DeepSeek 等 AI，翻得更自然。
+Google、微软免费可用，**Google 连不上时自动切换到微软**；也可以接入 Claude、DeepSeek 等 AI。
 
 **🎨 5 种译文样式 · 深色模式**
-左侧竖线、虚线下划线、背景高亮、淡色、无样式，随你选择。
+左侧竖线、虚线下划线、背景高亮、淡色、无样式，选之前就能看到效果。
+
+**🟢 状态一目了然**
+开着翻译的网页，工具栏图标上会显示绿色 ON 角标。
 
 </td>
 </tr>
@@ -66,9 +72,13 @@ Google、微软免费可用；也可以接入 Claude、DeepSeek 等 AI，翻得�
 |:---:|:---:|
 | <img src="docs/screenshot-highlight.png" alt="背景高亮样式" /> | <img src="docs/screenshot-only.png" alt="仅译文模式" /> |
 
-| 弹窗设置 | AI 设置 |
+| 划词翻译 | 弹窗设置 |
 |:---:|:---:|
-| <img src="docs/screenshot-popup.png" width="300" alt="弹窗设置" /> | <img src="docs/screenshot-options.png" alt="AI 设置" /> |
+| <img src="docs/screenshot-bubble.png" alt="划词翻译" /> | <img src="docs/screenshot-popup.png" width="300" alt="弹窗设置" /> |
+
+| 欢迎页 | AI 设置 |
+|:---:|:---:|
+| <img src="docs/screenshot-welcome.png" alt="欢迎页" /> | <img src="docs/screenshot-options.png" alt="AI 设置" /> |
 
 ## 📦 安装
 
@@ -78,7 +88,7 @@ Google、微软免费可用；也可以接入 Claude、DeepSeek 等 AI，翻得�
 2. 在 Chrome 地址栏打开 `chrome://extensions`
 3. 打开右上角的 **开发者模式**
 4. 点 **加载已解压的扩展程序**，选择解压出来的文件夹
-5. 刷新要翻译的网页，按 <kbd>Alt</kbd> + <kbd>A</kbd>
+5. 刷新要翻译的网页，按 <kbd>Alt</kbd> + <kbd>Q</kbd>
 
 <details>
 <summary><b>如何更新到新版本</b></summary>
@@ -104,7 +114,7 @@ Google、微软免费可用；也可以接入 Claude、DeepSeek 等 AI，翻得�
 
 | 想做什么 | 怎么做 |
 |---|---|
-| 翻译整个网页 / 恢复原文 | <kbd>Alt</kbd> + <kbd>A</kbd> · 点工具栏图标 →「翻译此网页」 · 网页空白处右键 |
+| 翻译整个网页 / 恢复原文 | <kbd>Alt</kbd> + <kbd>Q</kbd> · 点工具栏图标 →「翻译此网页」 · 网页空白处右键 |
 | 只翻译一段 | 鼠标停在段落上，单独按一下 <kbd>Ctrl</kbd> |
 | 划词翻译 | 选中文字 → 点「译」 |
 | 输入文字翻译 | 工具栏图标 →「输入文字翻译」 |
@@ -173,13 +183,14 @@ flowchart LR
 ## ❓ 常见问题
 
 <details>
-<summary><b>按了 Alt+A 没反应？</b></summary>
+<summary><b>按了 Alt+Q 没反应？</b></summary>
 
 <br />
 
 - 刚安装或刚更新插件时，**已经打开的网页要先刷新一次**
 - `chrome://` 开头的页面和 Chrome 应用商店页面，浏览器不允许插件运行
-- 快捷键可能和其他软件冲突了，在 `chrome://extensions/shortcuts` 里换一个
+- **快捷键被别的插件占用了**：比如「沉浸式翻译」默认用 <kbd>Alt</kbd> + <kbd>A</kbd>，所以我们改用了 <kbd>Alt</kbd> + <kbd>Q</kbd>。如果还是冲突，打开插件弹窗，主按钮上没有显示快捷键时，点「设置快捷键」换一个
+- 从旧版本升级的用户：Chrome 只在第一次安装时设置快捷键，请到 `chrome://extensions/shortcuts` 手动改成 <kbd>Alt</kbd> + <kbd>Q</kbd>
 
 </details>
 
@@ -190,7 +201,7 @@ flowchart LR
 
 把鼠标移到红字上能看到具体原因，点一下会重试。常见原因：
 
-- **Google 翻译**：所在网络访问不了 Google。换成微软翻译试试
+- **Google 翻译**：所在网络访问不了 Google。插件会自动改用微软翻译，弹窗里也会提示你
 - **微软翻译**：请求太频繁被暂时限制，等一会儿再试
 - **AI 翻译**：API Key 不对或余额不足。在 AI 设置里点「测试一下」看具体报错
 
@@ -222,10 +233,12 @@ flowchart LR
 ├── engines.js           三种翻译服务的实现（Google / 微软 / AI）
 ├── content.js           网页里：拆段落、整页翻译、Ctrl 单段翻译、划词气泡
 ├── content.css          译文样式
+├── ui.css               弹窗、设置页、欢迎页共用的设计样式
 ├── popup.html / .js     工具栏弹窗
 ├── options.html / .js   AI 设置页
+├── welcome.html / .js   安装后的欢迎页
 ├── icons/               插件图标
-└── docs/                README 用的截图和 logo
+└── docs/                截图、logo，以及产品复盘 PRODUCT.md
 ```
 
 纯原生 JavaScript，不需要构建，也没有任何依赖。改完代码在 `chrome://extensions` 点刷新就能看到效果。

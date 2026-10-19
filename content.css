@@ -74,78 +74,16 @@ font.hc-imm-trans.hc-imm-loading::after {
   to { transform: rotate(360deg); }
 }
 font.hc-imm-trans.hc-imm-error {
-  display: inline !important;
-  color: #d33;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-/* ===== 划词翻译气泡 ===== */
-.hc-translate-bubble,
-.hc-translate-trigger {
-  position: absolute;
-  z-index: 2147483647;
-  font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
-  box-sizing: border-box;
-}
-
-.hc-translate-bubble {
-  max-width: 420px;
-  min-width: 200px;
-  background: #fff;
-  color: #222;
-  border: 1px solid #e3e3e3;
-  border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
-  font-size: 14px;
-  line-height: 1.6;
-  overflow: hidden;
-  text-align: left;
-}
-
-.hc-translate-header {
-  display: flex;
-  justify-content: space-between;
+  display: inline-flex !important;
   align-items: center;
-  padding: 6px 10px;
-  background: #f6f8f7;
-  border-bottom: 1px solid #eee;
-  font-size: 12px;
-  color: #666;
-}
-
-.hc-translate-actions button {
-  all: unset;
+  gap: 4px;
+  padding: 1px 9px !important;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #dc2626;
+  font: 500 12px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei UI", sans-serif;
   cursor: pointer;
-  margin-left: 8px;
-  color: #059669;
-  font-size: 12px;
 }
-.hc-translate-actions button:hover { text-decoration: underline; }
-
-.hc-translate-body {
-  padding: 10px 12px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.hc-translate-trigger {
-  width: 26px;
-  height: 26px;
-  line-height: 26px;
-  text-align: center;
-  border-radius: 50%;
-  background: #059669;
-  color: #fff;
-  font-size: 13px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  user-select: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .hc-translate-bubble { background: #2a2b2e; color: #e8e8e8; border-color: #444; }
-  .hc-translate-header { background: #333438; border-color: #444; color: #aaa; }
+font.hc-imm-trans.hc-imm-error:hover {
+  background: rgba(239, 68, 68, 0.16) !important;
 }

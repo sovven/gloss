@@ -69,7 +69,7 @@
   const BLOCK_SKIP = new Set(["pre", "code", "kbd", "samp", "var"]);
   const SKIP_ATTR =
     ".notranslate,[translate='no'],[contenteditable=''],[contenteditable='true'],[contenteditable='plaintext-only']";
-  const OWN_SEL = `font.${TRANS},.hc-translate-bubble,.hc-translate-trigger`;
+  const OWN_SEL = `font.${TRANS},hc-translator-ui`;
 
   const isOwn = (el) => el.matches(OWN_SEL);
   const displayOf = (el) => getComputedStyle(el).display;
@@ -236,7 +236,7 @@
     if (!u.font?.isConnected) return;
     u.font.classList.remove("hc-imm-loading");
     u.font.classList.add("hc-imm-error");
-    u.font.textContent = `翻译失败：${e.message}（点击重试）`;
+    u.font.textContent = "翻译失败 · 点击重试";
     u.font.title = e.message;
     u.font.onclick = (ev) => {
       ev.preventDefault();
@@ -373,7 +373,7 @@
   );
 
   function toggleAt(t) {
-    if (t.nodeType !== 1 || t.closest(".hc-translate-bubble")) return;
+    if (t.nodeType !== 1 || t.closest("hc-translator-ui")) return;
     const f = t.closest(`font.${TRANS}`);
     if (f) return unitByFont.get(f) && removeUnit(unitByFont.get(f));
     for (let n = t; n && n !== document.body; n = n.parentNode) {
@@ -394,15 +394,86 @@
     enqueue(u);
   }
 
-  // ---------- 划词翻译气泡 ----------
+  // ---------- 划词翻译气泡（Shadow DOM：不受网页 CSS 影响） ----------
 
-  let bubble = null;
-  let trigger = null;
+  const UI_TAG = "hc-translator-ui";
+  const ICON_LOGO =
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h6A2.5 2.5 0 0 1 15 6.5v3A2.5 2.5 0 0 1 12.5 12H8l-2.5 2v-2A2.5 2.5 0 0 1 4 9.5v-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M11 13.5A2.5 2.5 0 0 1 13.5 11h4A2.5 2.5 0 0 1 20 13.5v3a2.5 2.5 0 0 1-2.5 2.5V21L15 19h-1.5a2.5 2.5 0 0 1-2.5-2.5v-3Z" fill="#10b981"/></svg>';
+  const ICON_COPY =
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/></svg>';
+  const ICON_CHECK =
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const ICON_CLOSE =
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+  const UI_CSS = `
+    :host { all: initial; position: absolute; z-index: 2147483647; }
+    * { box-sizing: border-box; }
+    .wrap {
+      --bg: #fff; --text: #111827; --muted: #6b7280; --border: rgba(15,23,42,.08); --fill: #f2f3f5; --skel: #eceef1;
+      font: 14px/1.6 "Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei UI",sans-serif;
+      color: var(--text); -webkit-font-smoothing: antialiased;
+      animation: in .14s cubic-bezier(.2,.8,.3,1);
+    }
+    @media (prefers-color-scheme: dark) {
+      .wrap { --bg: #1c1d20; --text: #f3f4f6; --muted: #9ca3af; --border: rgba(255,255,255,.09); --fill: #2a2b30; --skel: #2a2b30; }
+    }
+    @keyframes in { from { opacity: 0; transform: translateY(4px) scale(.98); } }
+    .trigger {
+      width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; cursor: pointer;
+      background: var(--bg); color: var(--text); border: 1px solid var(--border);
+      box-shadow: 0 4px 14px -2px rgba(15,23,42,.18), 0 1px 2px rgba(15,23,42,.06);
+      transition: transform .12s, box-shadow .12s;
+    }
+    .trigger:hover { transform: translateY(-1px) scale(1.05); box-shadow: 0 8px 20px -4px rgba(15,23,42,.25); }
+    .card {
+      width: min(380px, calc(100vw - 16px)); background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
+      box-shadow: 0 16px 40px -12px rgba(15,23,42,.28), 0 2px 6px rgba(15,23,42,.06); overflow: hidden;
+    }
+    .head { display: flex; align-items: center; gap: 4px; padding: 10px 8px 4px 14px; }
+    .lang { flex: 1; display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 500; color: var(--muted); }
+    .lang b { font-weight: 600; color: var(--text); }
+    button {
+      all: unset; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center;
+      color: var(--muted); cursor: pointer; transition: background .12s, color .12s;
+    }
+    button:hover { background: var(--fill); color: var(--text); }
+    .body { padding: 4px 16px 14px; font-size: 15px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow: auto; }
+    .body.err { color: #dc2626; font-size: 13px; }
+    .skel i { display: block; height: 10px; margin: 8px 0; border-radius: 5px; background: var(--skel); animation: pulse 1.2s ease-in-out infinite; }
+    .skel i:nth-child(2) { width: 85%; } .skel i:nth-child(3) { width: 55%; }
+    @keyframes pulse { 50% { opacity: .45; } }
+  `;
+
+  let ui = null; // 当前显示的气泡或按钮
 
   function removeBubble() {
-    bubble?.remove();
-    trigger?.remove();
-    bubble = trigger = null;
+    ui?.host.remove();
+    ui = null;
+  }
+
+  function mountUi() {
+    removeBubble();
+    const host = document.createElement(UI_TAG);
+    host.setAttribute("translate", "no");
+    const root = host.attachShadow({ mode: "open" });
+    root.innerHTML = `<style>${UI_CSS}</style><div class="wrap"></div>`;
+    document.documentElement.appendChild(host);
+    ui = { host, wrap: root.querySelector(".wrap") };
+    return ui;
+  }
+
+  // 放在选中文字下方；右边放不下就往左挪，下面放不下就放到上方
+  function place(rect) {
+    const { host } = ui;
+    const vw = document.documentElement.clientWidth;
+    const w = host.offsetWidth;
+    const h = host.offsetHeight;
+    const left = Math.max(8, Math.min(rect.left, vw - w - 8));
+    const below = rect.bottom + 8;
+    const top = below + h > window.innerHeight - 8 && rect.top - h - 8 > 8 ? rect.top - h - 8 : below;
+    host.style.left = `${window.scrollX + left}px`;
+    host.style.top = `${window.scrollY + top}px`;
   }
 
   function selectionRect() {
@@ -412,65 +483,79 @@
     return r.width || r.height ? r : null;
   }
 
-  function place(el, rect) {
-    document.documentElement.appendChild(el);
-    const maxLeft = window.scrollX + document.documentElement.clientWidth - el.offsetWidth - 8;
-    el.style.top = `${window.scrollY + rect.bottom + 8}px`;
-    el.style.left = `${Math.max(window.scrollX + 8, Math.min(window.scrollX + rect.left, maxLeft))}px`;
+  let langNames = null;
+  function langName(code) {
+    if (!code || code === "auto") return "自动检测";
+    const fixed = { "zh-CN": "简体中文", "zh-TW": "繁體中文", zh: "中文" }[code];
+    if (fixed) return fixed;
+    try {
+      langNames ??= new Intl.DisplayNames(["zh-CN"], { type: "language" });
+      return langNames.of(code) || code;
+    } catch {
+      return code;
+    }
   }
 
   function showBubble(text, rect) {
-    removeBubble();
-    bubble = document.createElement("div");
-    bubble.className = "hc-translate-bubble";
-    bubble.setAttribute("translate", "no");
-    bubble.innerHTML = `
-      <div class="hc-translate-header">
-        <span class="hc-translate-lang">翻译中…</span>
-        <span class="hc-translate-actions">
-          <button class="hc-copy">复制</button>
-          <button class="hc-close">✕</button>
-        </span>
-      </div>
-      <div class="hc-translate-body"></div>`;
-    const body = bubble.querySelector(".hc-translate-body");
-    const lang = bubble.querySelector(".hc-translate-lang");
-    bubble.querySelector(".hc-close").onclick = removeBubble;
-    bubble.querySelector(".hc-copy").onclick = (e) => {
+    rect ||= { left: 20, top: 20, bottom: 20 };
+    const { wrap } = mountUi();
+    wrap.innerHTML = `
+      <div class="card">
+        <div class="head">
+          <span class="lang">${ICON_LOGO}<span class="langtext">翻译中…</span></span>
+          <button class="copy" title="复制译文">${ICON_COPY}</button>
+          <button class="close" title="关闭 (Esc)">${ICON_CLOSE}</button>
+        </div>
+        <div class="body skel"><i></i><i></i><i></i></div>
+      </div>`;
+    const body = wrap.querySelector(".body");
+    const langText = wrap.querySelector(".langtext");
+    const copy = wrap.querySelector(".copy");
+    wrap.querySelector(".close").onclick = removeBubble;
+    copy.onclick = () => {
       navigator.clipboard.writeText(body.textContent);
-      e.target.textContent = "已复制";
+      copy.innerHTML = ICON_CHECK;
+      setTimeout(() => (copy.innerHTML = ICON_COPY), 1200);
     };
-    place(bubble, rect || { left: 20, bottom: 20 });
+    place(rect);
+    const mine = ui;
 
     send({ type: "translate", text })
       .then((res) => {
-        if (!bubble) return;
-        lang.textContent = `${res.sourceLang} → ${S.targetLang}`;
+        if (ui !== mine) return;
+        const from = document.createElement("span");
+        from.textContent = langName(res.sourceLang) + " → ";
+        const to = document.createElement("b");
+        to.textContent = langName(S.targetLang);
+        langText.replaceChildren(from, to);
+        body.className = "body";
         body.textContent = res.translated;
+        place(rect);
       })
       .catch((e) => {
-        if (!bubble) return;
-        lang.textContent = "翻译失败";
+        if (ui !== mine) return;
+        langText.textContent = "翻译失败";
+        body.className = "body err";
         body.textContent = e.message;
+        place(rect);
       });
   }
 
   function showTrigger(text, rect) {
-    removeBubble();
-    trigger = document.createElement("div");
-    trigger.className = "hc-translate-trigger";
-    trigger.textContent = "译";
-    trigger.addEventListener("mousedown", (e) => {
+    const { wrap } = mountUi();
+    wrap.innerHTML = `<div class="trigger" title="翻译选中的文字">${ICON_LOGO}</div>`;
+    wrap.querySelector(".trigger").addEventListener("mousedown", (e) => {
       e.preventDefault();
       e.stopPropagation();
       showBubble(text, rect);
     });
-    place(trigger, rect);
+    place(rect);
   }
 
+  const isUi = (t) => !!ui && t === ui.host;
+
   document.addEventListener("mouseup", (e) => {
-    if (S.selectMode === "off" || e.button !== 0) return;
-    if (bubble?.contains(e.target) || trigger?.contains(e.target)) return;
+    if (S.selectMode === "off" || e.button !== 0 || isUi(e.target)) return;
     setTimeout(() => {
       const text = window.getSelection()?.toString().trim();
       if (!text || text.length > 5000 || !/\p{L}/u.test(text)) return;
@@ -481,8 +566,7 @@
   });
 
   document.addEventListener("mousedown", (e) => {
-    if (bubble?.contains(e.target) || trigger?.contains(e.target)) return;
-    removeBubble();
+    if (!isUi(e.target)) removeBubble();
   });
 
   // ---------- 消息 & 设置 ----------

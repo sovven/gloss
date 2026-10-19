@@ -7,7 +7,7 @@ const AI_DEFAULTS = {
   openaiKey: "",
   openaiModel: "deepseek-chat",
 };
-const FIELDS = ["claudeKey", "claudeModel", "openaiBase", "openaiKey", "openaiModel"];
+const FIELDS = ["claudeKey", "openaiBase", "openaiKey", "openaiModel"];
 
 const provider = () => document.querySelector("input[name=provider]:checked").value;
 
@@ -24,6 +24,8 @@ function status(text, cls = "") {
 chrome.storage.local.get(AI_DEFAULTS, (c) => {
   document.querySelector(`input[name=provider][value=${c.aiProvider}]`).checked = true;
   FIELDS.forEach((k) => ($(k).value = c[k]));
+  const model = document.querySelector(`input[name=claudeModel][value="${c.claudeModel}"]`) || document.querySelector("input[name=claudeModel]");
+  model.checked = true;
   showProvider();
 });
 
@@ -55,6 +57,7 @@ async function save() {
   if (!(await ensurePermission())) return false;
   const data = { aiProvider: provider() };
   FIELDS.forEach((k) => (data[k] = $(k).value.trim()));
+  data.claudeModel = document.querySelector("input[name=claudeModel]:checked").value;
   await chrome.storage.local.set(data);
   // 保存后顺便把翻译服务切到 AI
   await chrome.storage.sync.set({ engine: "ai" });
@@ -62,7 +65,7 @@ async function save() {
 }
 
 $("save").onclick = async () => {
-  if (await save()) status("已保存，翻译服务已切换为 AI 翻译", "ok");
+  if (await save()) status("✓ 已保存，翻译服务已切换为 AI", "ok");
 };
 
 $("test").onclick = async () => {
@@ -72,7 +75,7 @@ $("test").onclick = async () => {
   chrome.runtime.sendMessage(
     { type: "translate", text: "The quick brown fox jumps over the lazy dog.", engine: "ai" },
     (res) => {
-      if (res?.ok) status(`成功（${((Date.now() - t0) / 1000).toFixed(1)} 秒）：${res.translated}`, "ok");
+      if (res?.ok) status(`✓ 成功（${((Date.now() - t0) / 1000).toFixed(1)} 秒）：${res.translated}`, "ok");
       else status("失败：" + (res?.error || chrome.runtime.lastError?.message || "未知错误"), "bad");
     }
   );

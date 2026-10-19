@@ -83,7 +83,12 @@ const google = (() => {
     texts.forEach((t) => body.append("q", t));
     const res = await fetchRetry(
       `https://translate.googleapis.com/translate_a/t?client=gtx&sl=auto&format=text&tl=${encodeURIComponent(tl)}`,
-      { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body }
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        body,
+        signal: AbortSignal.timeout(8000), // 连不上时别一直等
+      }
     );
     if (!res.ok) throw new Error(`Google 翻译返回 ${res.status}`);
     let data = await res.json();
@@ -111,6 +116,7 @@ const google = (() => {
       fetchRetry(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&dt=t&tl=${encodeURIComponent(tl)}`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        signal: AbortSignal.timeout(8000), // 连不上时别一直等
         body: "q=" + encodeURIComponent(text),
       })
     );

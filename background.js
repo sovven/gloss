@@ -23,12 +23,28 @@ function cacheSet(key, val) {
   cache.set(key, val);
 }
 
+// ===== Google 连不上时自动改用微软翻译（中国大陆常见） =====
+let googleDownUntil = 0;
+function markGoogleDown() {
+  googleDownUntil = Date.now() + 10 * 60 * 1000; // 10 分钟内不再尝试 Google
+  chrome.storage.session.set({ googleFallback: Date.now() });
+}
+async function runEngine(engine, texts, tl, ctx) {
+  if (engine === "google" && Date.now() < googleDownUntil) engine = "microsoft";
+  try {
+    return await (ENGINES[engine] || ENGINES.google).translate(texts, tl, ctx);
+  } catch (e) {
+    if (engine !== "google") throw e;
+    markGoogleDown();
+    return ENGINES.microsoft.translate(texts, tl, ctx);
+  }
+}
+
 // ===== 批量翻译（整页用） =====
 async function translateBatch(texts, ctx, override = {}) {
   const s = await getSettings();
   const engine = override.engine || s.engine;
   const tl = override.targetLang || s.targetLang;
-  const eng = ENGINES[engine] || ENGINES.google;
   const keyOf = (t) => `${engine}\u0000${tl}\u0000${t}`;
 
   const results = new Array(texts.length);
@@ -38,7 +54,7 @@ async function translateBatch(texts, ctx, override = {}) {
     hit ? (results[i] = hit) : missing.push(i);
   });
   if (missing.length) {
-    const rs = await eng.translate(missing.map((i) => texts[i]), tl, ctx);
+    const rs = await runEngine(engine, missing.map((i) => texts[i]), tl, ctx);
     missing.forEach((i, k) => {
       results[i] = rs[k];
       if (rs[k]?.text) cacheSet(keyOf(texts[i]), rs[k]);
@@ -52,8 +68,11 @@ async function translateOne(text, override = {}) {
   const s = await getSettings();
   const engine = override.engine || s.engine;
   const tl = override.targetLang || s.targetLang;
-  const r =
-    engine === "google" ? await ENGINES.google.single(text, tl) : (await translateBatch([text], null, { engine, targetLang: tl }))[0];
+  let r;
+  if (engine === "google" && Date.now() >= googleDownUntil) {
+    r = await ENGINES.google.single(text, tl).catch(() => (markGoogleDown(), null));
+  }
+  if (!r) r = (await translateBatch([text], null, { engine, targetLang: tl }))[0];
   return { translated: r.text, sourceLang: r.lang || "auto" };
 }
 
@@ -64,6 +83,10 @@ async function getTab(tabId) {
 }
 async function setTab(tabId, on) {
   await chrome.storage.session.set({ ["tab_" + tabId]: on });
+  // 工具栏图标上显示 ON 角标，一眼看出这个网页开着翻译
+  chrome.action.setBadgeText({ tabId, text: on ? "ON" : "" }).catch(() => {});
+  chrome.action.setBadgeBackgroundColor({ tabId, color: "#059669" }).catch(() => {});
+  chrome.action.setBadgeTextColor?.({ tabId, color: "#ffffff" }).catch(() => {});
   chrome.tabs.sendMessage(tabId, { type: "setPage", on }, () => void chrome.runtime.lastError);
 }
 chrome.tabs.onRemoved.addListener((tabId) => chrome.storage.session.remove("tab_" + tabId));
@@ -96,12 +119,14 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 // ===== 右键菜单 & 快捷键 =====
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async ({ reason }) => {
+  // 第一次安装：打开欢迎页，教用户怎么用
+  if (reason === "install") chrome.tabs.create({ url: "welcome.html" });
   // 补全新版本加入的默认设置
   await chrome.storage.sync.set(await getSettings());
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({ id: "translate-selection", title: "翻译「%s」", contexts: ["selection"] });
-    chrome.contextMenus.create({ id: "translate-page", title: "翻译此网页 / 显示原文 (Alt+A)", contexts: ["page"] });
+    chrome.contextMenus.create({ id: "translate-page", title: "翻译此网页 / 显示原文 (Alt+Q)", contexts: ["page"] });
   });
 });
 
