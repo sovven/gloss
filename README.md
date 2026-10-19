@@ -2,13 +2,13 @@
 
 <img src="docs/logo.png" width="112" alt="logo" />
 
-# 沉浸式双语翻译
+# Gloss
 
 **在原文下方显示译文，像读母语一样读外文网页**
 
-一个开源、免费、无需注册的 Chrome 双语翻译插件
+一个开源、免费、无需注册的 Chrome 双语对照阅读插件
 
-[![Version](https://img.shields.io/badge/version-2.3.0-10b981?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.4.0-10b981?style=flat-square)](CHANGELOG.md)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
 [![License: MIT](https://img.shields.io/badge/license-MIT-18181b?style=flat-square)](LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-10b981?style=flat-square)](#-项目结构)
@@ -22,6 +22,8 @@
 </div>
 
 <br />
+
+> **为什么叫 Gloss？** 在语言学里，*interlinear gloss*（行间注释）指的是在原文每一行下面写上对应的译文——这正是这个插件做的事。
 
 ## ✨ 功能
 

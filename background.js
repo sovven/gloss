@@ -101,7 +101,7 @@ async function setTab(tabId, on) {
   }
   await chrome.storage.session.set({ ["tab_" + tabId]: on });
   // 工具栏图标上显示 ON 角标，一眼看出这个网页开着翻译
-  badge(tabId, on ? "ON" : "", "#059669", on ? "沉浸式双语翻译：已翻译（Alt+Q 显示原文）" : "沉浸式双语翻译 (Alt+Q)");
+  badge(tabId, on ? "ON" : "", "#059669", on ? "Gloss：已翻译（Alt+Q 显示原文）" : "Gloss (Alt+Q)");
   return true;
 }
 chrome.tabs.onRemoved.addListener((tabId) => chrome.storage.session.remove("tab_" + tabId));

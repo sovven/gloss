@@ -1,4 +1,4 @@
-// 网页内：整页双语翻译（仿沉浸式翻译）、悬停 Ctrl 翻译单段、划词翻译
+// Gloss 网页内脚本：整页双语对照、悬停 Ctrl 翻译单段、划词翻译
 
 (() => {
   if (window.__hcTranslatorLoaded) return;
