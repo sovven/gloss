@@ -8,7 +8,7 @@
 
 一个开源、免费、无需注册的 Chrome 双语对照阅读插件
 
-[![Version](https://img.shields.io/badge/version-2.4.0-10b981?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.4.1-10b981?style=flat-square)](CHANGELOG.md)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
 [![License: MIT](https://img.shields.io/badge/license-MIT-18181b?style=flat-square)](LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-10b981?style=flat-square)](#-项目结构)

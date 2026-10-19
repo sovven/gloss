@@ -48,7 +48,7 @@ async function ensurePermission() {
     status("接口地址格式不对", "bad");
     return false;
   }
-  const granted = await chrome.permissions.request({ origins: [origin] });
+  const granted = await chrome.permissions.request({ origins: [origin] }).catch(() => false);
   if (!granted) status("没有获得访问该接口的权限", "bad");
   return granted;
 }

@@ -152,7 +152,10 @@ async function toggle(tabId) {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (tab?.id == null) return;
   if (info.menuItemId === "translate-selection") {
-    chrome.tabs.sendMessage(tab.id, { type: "showTranslation", text: info.selectionText }, { frameId: info.frameId ?? 0 });
+    // 网页没刷新（插件刚更新）时收不到消息：静默处理，图标上会提示刷新
+    chrome.tabs.sendMessage(tab.id, { type: "showTranslation", text: info.selectionText }, { frameId: info.frameId ?? 0 }, () => {
+      if (chrome.runtime.lastError) badge(tab.id, "!", "#f59e0b", "刷新网页后才能翻译（插件刚更新过）");
+    });
   }
   if (info.menuItemId === "translate-page") toggle(tab.id);
 });

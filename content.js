@@ -593,7 +593,7 @@
     const copy = wrap.querySelector(".copy");
     wrap.querySelector(".close").onclick = removeBubble;
     copy.onclick = () => {
-      navigator.clipboard.writeText(body.textContent);
+      navigator.clipboard.writeText(body.textContent).catch(() => {}); // 浏览器不给剪贴板权限时不报错
       copy.innerHTML = ICON_CHECK;
       setTimeout(() => (copy.innerHTML = ICON_COPY), 1200);
     };
@@ -695,5 +695,5 @@
     let on = S.alwaysSites.includes(location.hostname);
     if (!on && S.autoForeign) on = await isForeign();
     send({ type: "setTab", on }).catch(() => {});
-  })();
+  })().catch(() => {}); // 插件被更新/卸载时，旧网页里的脚本会失去连接，不用报错
 })();
