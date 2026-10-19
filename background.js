@@ -77,7 +77,12 @@ async function translateOne(text, override = {}) {
 }
 
 // ===== 标签页翻译开关（所有 frame 同步） =====
+// 以网页里的实际情况为准（包括按 Ctrl 单独翻译的段落），这样 Alt+Q 总能把译文清掉；问不到时再看记录
 async function getTab(tabId) {
+  const live = await new Promise((resolve) =>
+    chrome.tabs.sendMessage(tabId, { type: "pageState" }, { frameId: 0 }, (res) => resolve(chrome.runtime.lastError ? null : res))
+  );
+  if (live) return !!live.on;
   const key = "tab_" + tabId;
   return !!(await chrome.storage.session.get(key))[key];
 }

@@ -70,6 +70,8 @@
   const SKIP_ATTR =
     ".notranslate,[translate='no'],[contenteditable=''],[contenteditable='true'],[contenteditable='plaintext-only']";
   const OWN_SEL = `font.${TRANS},hc-translator-ui`;
+  // 其他翻译插件（沉浸式翻译、陪读蛙）插进网页的译文：别再翻译它，也别重复翻译它已经翻过的段落
+  const OTHER_SEL = '[class*="immersive-translate"],[data-immersive-translate-translation-element-mark],[class*="read-frog"]';
 
   // 界面元素（导航、菜单、工具栏、标签页）不是要读的内容，默认不翻译；悬停按 Ctrl 仍可单独翻译
   const UI_SEL = "nav,[role=navigation],[role=menu],[role=menubar],[role=toolbar],[role=tablist],[role=tab],[role=search]";
@@ -163,8 +165,9 @@
 
   function scan(container, out, force = false) {
     let run = [];
+    let other = false; // 这一段后面跟着其他插件的译文
     const flush = () => {
-      if (run.length) {
+      if (run.length && (force || !other)) {
         // 一排紧挨着的链接/标签（导航栏、标签云）：每个单独翻译，不拼成一句
         const els = run.filter((n) => n.nodeType === 1 && n.localName !== "br");
         const looseText = run.some((n) => n.nodeType === 3 && n.nodeValue.trim());
@@ -175,6 +178,7 @@
         }
       }
       run = [];
+      other = false;
     };
     for (const n of container.childNodes) {
       if (n.nodeType === 3) {
@@ -182,6 +186,10 @@
         continue;
       }
       if (n.nodeType !== 1 || isOwn(n)) continue;
+      if (n.matches(OTHER_SEL)) {
+        other = true;
+        continue;
+      }
       const tag = n.localName;
       if (!force && n.matches(SKIP_SEL)) {
         flush(); // 界面元素：整块跳过
@@ -654,7 +662,10 @@
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg.type === "setPage") setPage(msg.on);
     if (msg.type === "showTranslation") showBubble(msg.text, selectionRect());
-    if (msg.type === "pageState") sendResponse({ on: pageOn, host: location.hostname });
+    if (msg.type === "pageState") {
+      const visible = [...units].some((u) => u.font instanceof Element && u.font.isConnected);
+      sendResponse({ on: pageOn || visible, host: location.hostname });
+    }
   });
 
   chrome.storage.onChanged.addListener((changes, area) => {

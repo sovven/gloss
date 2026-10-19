@@ -8,7 +8,7 @@
 
 一个开源、免费、无需注册的 Chrome 双语对照阅读插件
 
-[![Version](https://img.shields.io/badge/version-2.4.1-10b981?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.4.2-10b981?style=flat-square)](CHANGELOG.md)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
 [![License: MIT](https://img.shields.io/badge/license-MIT-18181b?style=flat-square)](LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-10b981?style=flat-square)](#-项目结构)
@@ -196,6 +196,19 @@ flowchart LR
 - `chrome://` 开头的页面和 Chrome 应用商店页面，浏览器不允许插件运行
 - **快捷键被别的插件占用了**：比如「沉浸式翻译」默认用 <kbd>Alt</kbd> + <kbd>A</kbd>，所以我们改用了 <kbd>Alt</kbd> + <kbd>Q</kbd>。如果还是冲突，打开插件弹窗，主按钮上没有显示快捷键时，点「设置快捷键」换一个
 - 从旧版本升级的用户：Chrome 只在第一次安装时设置快捷键，请到 `chrome://extensions/shortcuts` 手动改成 <kbd>Alt</kbd> + <kbd>Q</kbd>
+
+</details>
+
+<details>
+<summary><b>同一段出现了两份译文？</b></summary>
+
+<br />
+
+多半是同时开着别的翻译插件，比如「沉浸式翻译」。两个插件会各自翻译一遍。
+
+- Gloss 会自动跳过别的插件已经翻译过的段落；但如果别的插件比 Gloss **后**翻译，仍可能重复
+- 建议只留一个：在  里关掉另一个翻译插件，或者关掉它的「自动翻译」
+- 按 <kbd>Alt</kbd> + <kbd>Q</kbd> 只会清除 Gloss 自己的译文，别的插件的译文需要用它自己的方式关闭
 
 </details>
 
