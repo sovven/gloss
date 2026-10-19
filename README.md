@@ -8,7 +8,7 @@
 
 一个开源、免费、无需注册的 Chrome 双语翻译插件
 
-[![Version](https://img.shields.io/badge/version-2.2.0-10b981?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.2.1-10b981?style=flat-square)](CHANGELOG.md)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
 [![License: MIT](https://img.shields.io/badge/license-MIT-18181b?style=flat-square)](LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-10b981?style=flat-square)](#-项目结构)
@@ -187,7 +187,7 @@ flowchart LR
 
 <br />
 
-- 刚安装或刚更新插件时，**已经打开的网页要先刷新一次**
+- 刚安装或刚更新插件时，**已经打开的网页要先刷新一次**。这时工具栏图标上会显示橙色的 **!**，打开弹窗点「刷新网页后即可翻译」就好
 - `chrome://` 开头的页面和 Chrome 应用商店页面，浏览器不允许插件运行
 - **快捷键被别的插件占用了**：比如「沉浸式翻译」默认用 <kbd>Alt</kbd> + <kbd>A</kbd>，所以我们改用了 <kbd>Alt</kbd> + <kbd>Q</kbd>。如果还是冲突，打开插件弹窗，主按钮上没有显示快捷键时，点「设置快捷键」换一个
 - 从旧版本升级的用户：Chrome 只在第一次安装时设置快捷键，请到 `chrome://extensions/shortcuts` 手动改成 <kbd>Alt</kbd> + <kbd>Q</kbd>

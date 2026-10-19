@@ -113,20 +113,25 @@ function setPageBtn(on) {
 }
 
 function setPage(on) {
-  chrome.runtime.sendMessage({ type: "setTab", tabId: tab.id, on }, (res) => res?.ok && setPageBtn(on));
+  chrome.runtime.sendMessage({ type: "setTab", tabId: tab.id, on }, (res) => (res?.stale ? showStale() : res?.ok && setPageBtn(res.on)));
+}
+
+// 网页里没有插件脚本（插件刚更新、网页没刷新，或者是浏览器自带页面）：主按钮变成“刷新网页”
+let stale = false;
+function showStale() {
+  stale = true;
+  $("page").querySelector(".label").textContent = "刷新网页后即可翻译";
+  $("page").classList.remove("on");
+  $("status").textContent = "需要刷新";
+  $("status").classList.remove("on");
+  document.querySelector(".hint").textContent = "插件刚安装或更新过，已经打开的网页要刷新一次。浏览器自带的页面（如设置页）不能翻译。";
 }
 
 chrome.tabs.query({ active: true, currentWindow: true }, ([t]) => {
   tab = t;
   if (!tab) return;
   chrome.tabs.sendMessage(tab.id, { type: "pageState" }, { frameId: 0 }, (res) => {
-    if (chrome.runtime.lastError || !res) {
-      $("page").disabled = true;
-      $("page").querySelector(".label").textContent = "这个页面不能翻译";
-      $("status").textContent = "不可用";
-      $("page").title = "浏览器自带页面不允许插件运行；刚安装插件的话，请先刷新网页";
-      return;
-    }
+    if (chrome.runtime.lastError || !res) return showStale();
     host = res.host;
     setPageBtn(res.on);
     render();
@@ -134,7 +139,12 @@ chrome.tabs.query({ active: true, currentWindow: true }, ([t]) => {
 });
 
 $("page").onclick = () => {
+  if (stale) {
+    chrome.tabs.reload(tab.id);
+    return window.close();
+  }
   chrome.runtime.sendMessage({ type: "toggleTab", tabId: tab.id }, (res) => {
+    if (res?.stale) return showStale();
     if (res?.ok) setPageBtn(res.on);
     window.close();
   });

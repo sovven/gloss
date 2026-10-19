@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "沉浸式双语翻译",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "仿沉浸式翻译：整页双语对照、仅译文模式、悬停翻译段落、划词翻译，支持 Google / 微软 / AI 翻译",
   "icons": {
     "16": "icons/icon16.png",

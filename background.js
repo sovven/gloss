@@ -81,13 +81,28 @@ async function getTab(tabId) {
   const key = "tab_" + tabId;
   return !!(await chrome.storage.session.get(key))[key];
 }
+function badge(tabId, text, color, title) {
+  chrome.action.setBadgeText({ tabId, text }).catch(() => {});
+  chrome.action.setBadgeBackgroundColor({ tabId, color }).catch(() => {});
+  chrome.action.setBadgeTextColor?.({ tabId, color: "#ffffff" }).catch(() => {});
+  chrome.action.setTitle({ tabId, title }).catch(() => {});
+}
+
+// 返回 false 表示这个网页里没有插件脚本：多半是插件刚更新、网页还没刷新，或者是浏览器自带页面
 async function setTab(tabId, on) {
+  const alive = await new Promise((resolve) =>
+    chrome.tabs.sendMessage(tabId, { type: "setPage", on }, () => {
+      resolve(!/Receiving end does not exist/i.test(chrome.runtime.lastError?.message || ""));
+    })
+  );
+  if (!alive) {
+    badge(tabId, "!", "#f59e0b", "刷新网页后才能翻译（插件刚更新过，或这个页面不允许插件运行）");
+    return false;
+  }
   await chrome.storage.session.set({ ["tab_" + tabId]: on });
   // 工具栏图标上显示 ON 角标，一眼看出这个网页开着翻译
-  chrome.action.setBadgeText({ tabId, text: on ? "ON" : "" }).catch(() => {});
-  chrome.action.setBadgeBackgroundColor({ tabId, color: "#059669" }).catch(() => {});
-  chrome.action.setBadgeTextColor?.({ tabId, color: "#ffffff" }).catch(() => {});
-  chrome.tabs.sendMessage(tabId, { type: "setPage", on }, () => void chrome.runtime.lastError);
+  badge(tabId, on ? "ON" : "", "#059669", on ? "沉浸式双语翻译：已翻译（Alt+Q 显示原文）" : "沉浸式双语翻译 (Alt+Q)");
+  return true;
 }
 chrome.tabs.onRemoved.addListener((tabId) => chrome.storage.session.remove("tab_" + tabId));
 
@@ -105,9 +120,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     case "getTab":
       return reply(getTab(tabId).then((on) => ({ on })));
     case "setTab":
-      return reply(setTab(tabId, msg.on).then(() => ({ on: msg.on })));
+      return reply(setTab(tabId, msg.on).then((alive) => ({ on: alive && msg.on, stale: !alive })));
     case "toggleTab":
-      return reply(getTab(tabId).then((on) => setTab(tabId, !on).then(() => ({ on: !on }))));
+      return reply(getTab(tabId).then((on) => setTab(tabId, !on).then((alive) => ({ on: alive ? !on : on, stale: !alive }))));
   }
 });
 
