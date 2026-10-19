@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>AI 翻译设置</title>
+  <style>
+    :root { --c: #059669; --bg: #f6f7f9; --card: #fff; --fg: #222; --sub: #777; --line: #e3e3e3; --ok: #1a8f4a; --bad: #d33; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #1b1c1f; --card: #26272b; --fg: #eee; --sub: #9a9a9a; --line: #3a3b3f; } }
+    body { margin: 0; padding: 32px 16px; font: 14px/1.6 "Segoe UI", "Microsoft YaHei", sans-serif; color: var(--fg); background: var(--bg); }
+    main { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 22px; margin: 0 0 4px; display: flex; align-items: center; gap: 10px; }
+    .lead { color: var(--sub); margin: 0 0 20px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tabs label { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+    .tabs label:has(input:checked) { border-color: var(--c); box-shadow: 0 0 0 1px var(--c) inset; }
+    .tabs small { display: block; color: var(--sub); }
+    .field { margin: 12px 0; }
+    .field > span { display: block; font-weight: 600; margin-bottom: 4px; }
+    .field small { color: var(--sub); }
+    input[type=text], input[type=password], select { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: var(--card); color: var(--fg); }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .presets button { background: none; border: 1px solid var(--line); color: var(--fg); padding: 3px 10px; border-radius: 999px; font-size: 12px; cursor: pointer; }
+    .presets button:hover { border-color: var(--c); color: var(--c); }
+    .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .actions button { padding: 8px 18px; border: 0; border-radius: 8px; background: var(--c); color: #fff; font: inherit; cursor: pointer; }
+    .actions button.secondary { background: none; border: 1px solid var(--line); color: var(--fg); }
+    #status { white-space: pre-wrap; }
+    #status.ok { color: var(--ok); } #status.bad { color: var(--bad); }
+    a { color: var(--c); }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<main>
+  <h1><img src="icons/icon48.png" alt="" width="32" height="32" />AI 翻译设置</h1>
+  <p class="lead">在插件弹窗里把「翻译服务」选为「AI 翻译」后，会使用这里的配置。API Key 只保存在这台电脑的浏览器里，不会同步上传。</p>
+
+  <div class="card">
+    <div class="tabs">
+      <label><input type="radio" name="provider" value="claude" /> Claude <small>Anthropic 官方 API</small></label>
+      <label><input type="radio" name="provider" value="openai" /> 其他 AI <small>DeepSeek、通义千问、Kimi、OpenAI 等</small></label>
+    </div>
+
+    <section id="claudeBox">
+      <div class="field">
+        <span>Claude API Key</span>
+        <input type="password" id="claudeKey" placeholder="sk-ant-..." autocomplete="off" />
+        <small>在 <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> 创建</small>
+      </div>
+      <div class="field">
+        <span>模型</span>
+        <select id="claudeModel">
+          <option value="claude-opus-5-5">Claude Opus 5.5（质量最好）</option>
+          <option value="claude-sonnet-5-5">Claude Sonnet 5.5（质量和速度平衡）</option>
+          <option value="claude-haiku-5-5">Claude Haiku 5.5（最快、最便宜）</option>
+        </select>
+        <small>每百万 token 价格（输入 / 输出）：Opus $4 / $20，Sonnet $2 / $10，Haiku $0.10 / $0.50。整页翻译量大，日常浏览用 Haiku 更划算。</small>
+      </div>
+    </section>
+
+    <section id="openaiBox" hidden>
+      <div class="field">
+        <span>接口地址</span>
+        <input type="text" id="openaiBase" placeholder="https://api.deepseek.com" />
+        <div class="presets">
+          <button data-base="https://api.deepseek.com" data-model="deepseek-chat">DeepSeek</button>
+          <button data-base="https://dashscope.aliyuncs.com/compatible-mode/v1" data-model="qwen-plus">通义千问</button>
+          <button data-base="https://api.moonshot.cn/v1" data-model="moonshot-v1-8k">Kimi</button>
+          <button data-base="https://api.openai.com/v1" data-model="gpt-4o-mini">OpenAI</button>
+        </div>
+        <small>需要兼容 OpenAI 的 /chat/completions 接口</small>
+      </div>
+      <div class="field">
+        <span>API Key</span>
+        <input type="password" id="openaiKey" placeholder="sk-..." autocomplete="off" />
+      </div>
+      <div class="field">
+        <span>模型名称</span>
+        <input type="text" id="openaiModel" placeholder="deepseek-chat" />
+      </div>
+    </section>
+
+    <div class="actions">
+      <button id="save">保存</button>
+      <button id="test" class="secondary">测试一下</button>
+      <span id="status"></span>
+    </div>
+  </div>
+</main>
+<script src="options.js"></script>
+</body>
+</html>
